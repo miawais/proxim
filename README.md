@@ -28,62 +28,11 @@ Anyone building multi-agent systems where outputs flow between agents without a 
 
 ## How it works
 
-The whole lifecycle — one agent produces a signed output, another verifies it across four dimensions and decides whether to act, then feeds the result back into reputation:
+One agent produces a signed output; another verifies it across four dimensions before acting, then feeds the result back into reputation:
 
-```mermaid
-flowchart LR
-    subgraph PROD["🅰  Producer agent"]
-        direction TB
-        O["Output<br/>(a decision / answer)"]
-        S["Sign with<br/>Ed25519 private key"]
-        O --> S
-    end
-
-    subgraph WIRE["📦  Sent together over the wire"]
-        direction TB
-        ATT["Attestation<br/>• agent_id px_…<br/>• payload SHA-256<br/>• timestamp + TTL<br/>• signature"]
-        PAY["Output bytes"]
-    end
-
-    S --> ATT
-
-    subgraph CONS["🅱  Consumer agent · Verifier"]
-        direction TB
-        C1["1 · Signature valid?<br/>id matches key?"]
-        C2["2 · Payload hash<br/>matches output?"]
-        C3["3 · Registered &amp;<br/>not revoked?"]
-        C4["4 · Reputation ≥<br/>threshold?"]
-        C1 --> C2 --> C3 --> C4
-    end
-
-    ATT --> C1
-    PAY --> C2
-
-    REG[("Registry<br/>trust directory")]
-    REP[("Reputation<br/>ledger")]
-    C3 -. lookup .-> REG
-    C4 -. score .-> REP
-
-    C4 --> POL{"Trust<br/>policy"}
-    POL -->|trusted| ACT["✅ Act on the output"]
-    POL -->|rejected| DROP["❌ Reject<br/>tampered · impersonated<br/>revoked · low reputation"]
-
-    ACT --> FB["Give feedback<br/>good / bad"]
-    FB -. updates .-> REP
-
-    classDef produce fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a;
-    classDef wire fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95;
-    classDef verify fill:#dcfce7,stroke:#22c55e,color:#14532d;
-    classDef store fill:#fef9c3,stroke:#eab308,color:#713f12;
-    classDef good fill:#bbf7d0,stroke:#16a34a,color:#14532d;
-    classDef bad fill:#fecaca,stroke:#ef4444,color:#7f1d1d;
-    class O,S produce;
-    class ATT,PAY wire;
-    class C1,C2,C3,C4,POL verify;
-    class REG,REP store;
-    class ACT,FB good;
-    class DROP bad;
-```
+<p align="center">
+  <img src="assets/how-it-works.svg" alt="How Proxim works: produce &amp; sign, attach a tamper-evident attestation, then verify and decide — with a reputation feedback loop." width="900" />
+</p>
 
 Proxim rests on three pillars, each mapping to one of the questions above.
 
